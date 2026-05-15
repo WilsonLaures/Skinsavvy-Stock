@@ -1,0 +1,729 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GlowStock — Beauty Inventory</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css">
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+<div class="app-shell">
+
+<!-- Mobile topbar (only visible on mobile) -->
+<div class="mobile-topbar" id="mobile-topbar">
+  <button class="btn-icon" id="btn-mobile-menu" aria-label="Open menu">
+    <i class="ti ti-menu-2"></i>
+  </button>
+  <h1>✦ GlowStock</h1>
+  <div class="topbar-right">
+    <button class="btn-icon" onclick="dbExport()" title="Backup DB"><i class="ti ti-database-export"></i></button>
+  </div>
+</div>
+
+<!-- Sidebar backdrop (mobile tap-to-close) -->
+<div class="sidebar-overlay" id="sidebar-overlay" onclick="closeMobileSidebar()"></div>
+
+<div class="app">
+
+<!-- ═══════════ SIDEBAR ═══════════ -->
+<nav class="sidebar" id="sidebar">
+  <div class="sidebar-logo">
+    <span class="logo-full"><h1>✦ GlowStock</h1><p>Beauty Inventory</p></span>
+    <button class="btn btn-sm sidebar-toggle-btn" id="btn-sidebar-toggle" title="Collapse sidebar">
+      <i class="ti ti-layout-sidebar-left-collapse" id="sidebar-toggle-icon"></i>
+    </button>
+    <button class="btn btn-sm" id="btn-mobile-close-sidebar" onclick="closeMobileSidebar()" style="display:none;border:none;background:transparent;font-size:18px;padding:4px" aria-label="Close menu">
+      <i class="ti ti-x"></i>
+    </button>
+  </div>
+  <div class="nav-section">Overview</div>
+  <div class="nav-item active" data-page="dashboard"><i class="ti ti-layout-dashboard"></i><span>Dashboard</span></div>
+  <div class="nav-item" data-page="pl"><i class="ti ti-chart-bar"></i><span>P&amp;L Report</span></div>
+  <div class="nav-item" data-page="cashflow"><i class="ti ti-cash"></i><span>Income &amp; Expense</span></div>
+  <div class="nav-item" data-page="targets"><i class="ti ti-target"></i><span>Sales Targets</span></div>
+  <div class="nav-section">Transactions</div>
+  <div class="nav-item" data-page="sales"><i class="ti ti-receipt"></i><span>Sales</span></div>
+  <div class="nav-item" data-page="purchases"><i class="ti ti-shopping-cart"></i><span>Purchases</span></div>
+  <div class="nav-item" data-page="returns"><i class="ti ti-arrow-back-up"></i><span>Returns</span></div>
+  <div class="nav-section">Catalog</div>
+  <div class="nav-item" data-page="inventory"><i class="ti ti-box"></i><span>Inventory</span></div>
+  <div class="nav-item" data-page="bundles"><i class="ti ti-package"></i><span>Bundles</span></div>
+  <div class="nav-item" data-page="categories"><i class="ti ti-tag"></i><span>Categories</span></div>
+  <div class="nav-item" data-page="brands"><i class="ti ti-medal"></i><span>Brands</span></div>
+  <div class="nav-section">Settings</div>
+  <div class="nav-item" data-page="suppliers"><i class="ti ti-truck"></i><span>Suppliers</span></div>
+  <div class="nav-item" data-page="admin-fees"><i class="ti ti-percentage"></i><span>Admin Fees</span></div>
+  <div class="nav-item" data-page="restock"><i class="ti ti-bell"></i><span>Restock Rules</span></div>
+  <div class="sidebar-footer">
+    <button class="btn btn-sm" id="btn-backup"><i class="ti ti-database-export"></i><span>Backup DB</span></button>
+    <button class="btn btn-sm" id="btn-restore"><i class="ti ti-database-import"></i><span>Restore DB</span></button>
+    <input type="file" id="import-db-file" accept=".json" style="display:none">
+  </div>
+</nav>
+
+<!-- ═══════════ MAIN ═══════════ -->
+<div class="main">
+
+<!-- Dashboard -->
+<div class="page active" id="page-dashboard">
+  <div class="page-header">
+    <div><h2>Dashboard</h2><p>Your Shopee beauty store at a glance</p></div>
+    <div class="hdr-actions">
+      <button class="btn" id="btn-import-csv"><i class="ti ti-upload"></i>Import Orders</button>
+      <button class="btn btn-success" id="btn-export-sales"><i class="ti ti-download"></i>Export Sales</button>
+    </div>
+  </div>
+  <div id="dash-filter-bar"></div>
+  <div class="metric-grid" id="dash-metrics"></div>
+  <div id="dash-target-bar"></div>
+  <div class="chart-row">
+    <div class="card"><div class="sec-title">Revenue by Category</div><div class="chart-wrap"><canvas id="catChart" role="img" aria-label="Revenue by category"></canvas></div></div>
+    <div class="card"><div class="sec-title">Last 8 Sales</div><div class="chart-wrap"><canvas id="salesChart" role="img" aria-label="Recent sales"></canvas></div></div>
+  </div>
+  <div class="card"><div class="sec-title">Restock Alerts</div><div id="dash-alerts"></div></div>
+  <div class="card"><div class="sec-title">Top Products by Revenue</div><div id="dash-top"></div></div>
+</div>
+
+<!-- P&L -->
+<div class="page" id="page-pl">
+  <div class="page-header">
+    <div><h2>Profit &amp; Loss</h2><p>Monthly revenue, costs, and margins</p></div>
+    <button class="btn btn-success" id="btn-export-pl"><i class="ti ti-download"></i>Export P&amp;L</button>
+  </div>
+  <div class="card card-inline-form">
+    <div class="form-group"><label>Month</label><select id="pl-month"></select></div>
+    <div class="form-group"><label>Year</label><select id="pl-year"></select></div>
+  </div>
+  <div class="chart-row">
+    <div class="card"><div class="sec-title">6-Month Revenue vs Cost</div><div class="chart-wrap"><canvas id="plLineChart" role="img" aria-label="Monthly P&L trend"></canvas></div></div>
+    <div class="card" id="pl-summary"></div>
+  </div>
+  <div class="card" id="pl-detail"></div>
+</div>
+
+<!-- Income & Expense -->
+<div class="page" id="page-cashflow">
+  <div class="page-header">
+    <div><h2>Income &amp; Expense</h2><p>Other cashflow entries that feed into your P&amp;L</p></div>
+    <div class="hdr-actions">
+      <button class="btn btn-success" id="btn-export-cashflow"><i class="ti ti-download"></i>Export</button>
+      <button class="btn btn-primary" id="btn-add-cashflow"><i class="ti ti-plus"></i>Add Entry</button>
+    </div>
+  </div>
+  <div class="metric-grid" id="cashflow-summary"></div>
+  <div class="toolbar">
+    <div class="search-wrap"><i class="ti ti-search"></i><input class="search-input" id="cashflow-search" type="text" placeholder="Search..."></div>
+  </div>
+  <div class="tbl-wrap">
+    <table><thead><tr><th>ID</th><th>Date</th><th>Type</th><th>Category</th><th>Description</th><th>Amount</th><th>Notes</th><th></th></tr></thead>
+    <tbody id="cashflow-body"></tbody></table>
+  </div>
+</div>
+
+<!-- Sales Targets -->
+<div class="page" id="page-targets">
+  <div class="page-header">
+    <div><h2>Sales Targets</h2><p>Monthly goals and progress</p></div>
+    <button class="btn btn-primary" id="btn-add-target"><i class="ti ti-plus"></i>Set Target</button>
+  </div>
+  <div id="targets-list"></div>
+</div>
+
+<!-- Sales -->
+<div class="page" id="page-sales">
+  <div class="page-header">
+    <div><h2>Sales Records</h2><p>Every order from your Shopee store</p></div>
+    <div class="hdr-actions">
+      <button class="btn" id="btn-import-csv-sales"><i class="ti ti-upload"></i>Import CSV</button>
+      <button class="btn btn-success" id="btn-export-sales-page"><i class="ti ti-download"></i>Export</button>
+      <button class="btn btn-primary" id="btn-add-sale"><i class="ti ti-plus"></i>Record Sale</button>
+    </div>
+  </div>
+  <div class="toolbar">
+    <div class="toolbar-left">
+      <div class="search-wrap"><i class="ti ti-search"></i><input class="search-input" id="sale-search" type="text" placeholder="Search..."></div>
+      <select id="sale-filter-cat" class="filter-select"><option value="">All Categories</option></select>
+    </div>
+  </div>
+  <div class="tbl-wrap">
+    <table><thead><tr><th>Sale ID</th><th>Date</th><th>Customer</th><th>Items</th><th>Subtotal</th><th>Admin Fees</th><th>Net Sales</th><th></th></tr></thead>
+    <tbody id="sale-body"></tbody></table>
+  </div>
+  <div id="sale-pagination"></div>
+</div>
+
+<!-- Purchases -->
+<div class="page" id="page-purchases">
+  <div class="page-header">
+    <div><h2>Purchases</h2><p>Restock and supplier orders</p></div>
+    <div class="hdr-actions">
+      <button class="btn" id="btn-import-purchases"><i class="ti ti-upload"></i>Import CSV</button>
+      <button class="btn btn-success" id="btn-export-purchases"><i class="ti ti-download"></i>Export</button>
+      <button class="btn btn-primary" id="btn-add-purchase"><i class="ti ti-plus"></i>New Purchase</button>
+    </div>
+  </div>
+  <div class="toolbar">
+    <div class="search-wrap"><i class="ti ti-search"></i><input class="search-input" id="pur-search" type="text" placeholder="Search..."></div>
+  </div>
+  <div class="tbl-wrap">
+    <table><thead><tr><th>Purchase ID</th><th>Date</th><th>Arrival</th><th>Supplier</th><th>Status</th><th>Items</th><th>Subtotal</th><th>Delivery</th><th>Total</th><th></th></tr></thead>
+    <tbody id="pur-body"></tbody></table>
+  </div>
+  <div id="pur-pagination"></div>
+</div>
+
+<!-- Returns -->
+<div class="page" id="page-returns">
+  <div class="page-header">
+    <div><h2>Returns &amp; Refunds</h2><p>Returned items and reversed entries</p></div>
+    <div class="hdr-actions">
+      <button class="btn" id="btn-import-returns"><i class="ti ti-upload"></i>Import CSV</button>
+      <button class="btn btn-primary" id="btn-add-return"><i class="ti ti-plus"></i>Log Return</button>
+    </div>
+  </div>
+  <div class="tbl-wrap">
+    <table><thead><tr><th>Return ID</th><th>Date</th><th>Linked Sale</th><th>Customer</th><th>SKU</th><th>Product</th><th>Qty</th><th>Refund</th><th>Reason</th><th></th></tr></thead>
+    <tbody id="return-body"></tbody></table></div>
+<div id="ret-pagination"></div>
+  <div id="ret-pagination"></div>
+</div>
+
+<!-- Inventory -->
+<div class="page" id="page-inventory">
+  <div class="page-header">
+    <div><h2>Inventory Master</h2><p>Products, pricing, and stock</p></div>
+    <div class="hdr-actions">
+      <button class="btn" id="btn-import-inventory"><i class="ti ti-upload"></i>Import CSV</button>
+      <button class="btn btn-success" id="btn-export-inventory"><i class="ti ti-download"></i>Export</button>
+      <button class="btn btn-primary" id="btn-add-product"><i class="ti ti-plus"></i>Add Product</button>
+    </div>
+  </div>
+  <div class="toolbar">
+    <div class="toolbar-left">
+      <div class="search-wrap"><i class="ti ti-search"></i><input class="search-input" id="inv-search" type="text" placeholder="Search name, SKU, brand..."></div>
+      <select id="inv-filter-cat" class="filter-select"><option value="">All Categories</option></select>
+      <select id="inv-sort-select" class="filter-select" title="Sort by">
+        <option value="name-asc">Name A→Z</option>
+        <option value="name-desc">Name Z→A</option>
+        <option value="sku-asc">SKU A→Z</option>
+        <option value="sku-desc">SKU Z→A</option>
+        <option value="stock-asc">Stock ↑</option>
+        <option value="stock-desc">Stock ↓</option>
+        <option value="added-asc">Oldest First</option>
+        <option value="added-desc">Newest First</option>
+      </select>
+    </div>
+    <div class="hdr-actions">
+      <button class="btn btn-sm" id="btn-mass-price" style="display:none"><i class="ti ti-tag"></i> Price (<span id="inv-mass-count">0</span>)</button>
+      <button class="btn btn-sm btn-danger" id="btn-mass-delete" style="display:none"><i class="ti ti-trash"></i> Delete</button>
+      <button class="btn btn-sm" id="btn-mass-clear" style="display:none" onclick="invClearSelection()"><i class="ti ti-x"></i></button>
+    </div>
+  </div>
+  <div class="tbl-wrap">
+    <table><thead><tr>
+      <th style="width:32px;text-align:center"><input type="checkbox" id="inv-select-all" onchange="invSelectAll(this)" title="Select all" style="width:15px;height:15px;cursor:pointer;accent-color:var(--pink)"></th>
+      <th>Name</th><th>SKU</th><th>Brand</th><th>Category</th>
+      <th>Stock</th><th>Avg Buy</th><th>Last Buy</th><th>Sell Price</th>
+      <th>Margin</th><th>Net Profit</th><th>Supplier</th><th></th>
+    </tr></thead>
+    <tbody id="inv-body"></tbody></table></div>
+<div id="inv-pagination"></div>
+  <div id="inv-pagination"></div>
+</div>
+
+<!-- Bundles -->
+<div class="page" id="page-bundles">
+  <div class="page-header">
+    <div><h2>Product Bundles</h2><p>Sets that deduct from multiple SKUs on sale</p></div>
+    <button class="btn btn-primary" id="btn-add-bundle"><i class="ti ti-plus"></i>Create Bundle</button>
+  </div>
+  <div id="bundles-list"></div>
+</div>
+
+<!-- Categories -->
+<div class="page" id="page-categories">
+  <div class="page-header">
+    <div><h2>Category Master</h2><p>Organise your product catalog</p></div>
+    <button class="btn btn-primary" id="btn-add-category"><i class="ti ti-plus"></i>Add Category</button>
+  </div>
+  <div id="cat-list"></div>
+</div>
+
+<!-- Brands -->
+<div class="page" id="page-brands">
+  <div class="page-header">
+    <div><h2>Brand Master</h2><p>Manage beauty brands in your catalog</p></div>
+    <button class="btn btn-primary" id="btn-add-brand"><i class="ti ti-plus"></i>Add Brand</button>
+  </div>
+  <div id="brands-list"></div>
+</div>
+
+<!-- Suppliers -->
+<div class="page" id="page-suppliers">
+  <div class="page-header">
+    <div><h2>Supplier Directory</h2><p>Contacts, payment terms, and lead times</p></div>
+    <button class="btn btn-primary" id="btn-add-supplier"><i class="ti ti-plus"></i>Add Supplier</button>
+  </div>
+  <div id="supplier-list"></div>
+</div>
+
+<!-- Admin Fees -->
+<div class="page" id="page-admin-fees">
+  <div class="page-header">
+    <div><h2>Admin Fees</h2><p>Shopee platform fees — auto-applied to all sales, editable per transaction</p></div>
+    <button class="btn btn-primary" id="btn-add-fee"><i class="ti ti-plus"></i>Add Fee</button>
+  </div>
+  <div class="card" id="fee-list"></div>
+</div>
+
+<!-- Restock -->
+<div class="page" id="page-restock">
+  <div class="page-header">
+    <div><h2>Restock Rules</h2><p>Minimum stock thresholds per product</p></div>
+    <button class="btn btn-primary" id="btn-add-restock"><i class="ti ti-plus"></i>Add Rule</button>
+  </div>
+  <div id="restock-list"></div>
+</div>
+
+</div><!-- end .main -->
+</div><!-- end .app -->
+
+<!-- ═══════════════════════ MODALS ═══════════════════════ -->
+
+<!-- Inventory Add/Edit -->
+<div class="modal-overlay" id="inv-modal"><div class="modal modal-lg">
+  <h3 id="inv-modal-title">Add Product</h3>
+  <div class="form-grid">
+    <div class="form-group fg2"><label>Product Name</label><input type="text" id="inv-name" placeholder="e.g. Lip Gloss Pink Coral"></div>
+    <div class="form-group"><label>SKU</label><input type="text" id="inv-sku" placeholder="e.g. LG-001"></div>
+    <div class="form-group"><label>Brand</label><select id="inv-brand"></select></div>
+    <div class="form-group"><label>Category</label><select id="inv-cat"></select></div>
+    <div class="form-group"><label>Sell Price (Rp)</label><input type="number" id="inv-sell" min="0"></div>
+    <div class="form-group"><label>Initial Stock</label><input type="number" id="inv-stock" value="0" min="0"></div>
+    <div class="form-group"><label>Min Stock Alert</label><input type="number" id="inv-min-stock" value="5" min="0"></div>
+    <div class="form-group"><label>Preferred Supplier</label><select id="inv-supplier"></select></div>
+  </div>
+  <input type="hidden" id="inv-edit-idx" value="-1">
+  <div class="modal-footer">
+    <button class="btn" data-close="inv-modal">Cancel</button>
+    <button class="btn btn-primary" id="btn-save-product">Save Product</button>
+  </div>
+</div></div>
+
+<!-- Inventory Import -->
+<div class="modal-overlay" id="inv-import-modal"><div class="modal modal-lg">
+  <h3>Import Inventory CSV</h3>
+  <p class="modal-hint">Columns: <code>Name, SKU, Brand, Category, Sell Price, Stock, Min Stock, Supplier</code> — SKU is used to match and update existing products.</p>
+  <div class="form-group" style="margin-bottom:10px"><label>Paste CSV Data</label><textarea id="inv-import-csv" rows="6" placeholder="Name,SKU,Brand,Category,Sell Price,Stock,Min Stock,Supplier"></textarea></div>
+  <div class="import-file-row"><span class="hint">or upload:</span><input type="file" id="inv-import-file" accept=".csv"></div>
+  <div id="inv-import-preview" class="hint"></div>
+  <div class="modal-footer">
+    <button class="btn" data-close="inv-import-modal">Cancel</button>
+    <button class="btn btn-primary" id="btn-inv-import-process">Import</button>
+  </div>
+</div></div>
+
+<!-- Sale -->
+<div class="modal-overlay" id="sale-modal"><div class="modal modal-fullscreen">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+    <h3 id="sale-modal-title" style="margin:0">Record Sale</h3>
+    <span id="sale-id-row" style="font-size:12px;color:var(--text2);display:none">ID: <code id="sale-id-display"></code></span>
+  </div>
+  <div class="form-grid" style="margin-bottom:14px">
+    <div class="form-group"><label>Sales Date</label><input type="date" id="sale-date"></div>
+    <div class="form-group"><label>Customer</label><input type="text" id="sale-customer" placeholder="Buyer name or order ID"></div>
+    <div class="form-group fg2"><label>Notes (optional)</label><input type="text" id="sale-notes" placeholder="e.g. Shopee order #..."></div>
+  </div>
+  <div class="fee-checks-section">
+    <div class="sec-title" style="margin-bottom:6px">Admin Fees <span style="font-weight:400;text-transform:none;letter-spacing:0;font-size:11px;color:var(--text2)">— all fees pre-selected; uncheck to exclude</span></div>
+    <div id="sale-fee-checks" class="fee-checks-grid"></div>
+  </div>
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+    <div class="sec-title" style="margin:0">Items</div>
+    <button class="btn btn-sm btn-primary" id="btn-sale-add-products"><i class="ti ti-table-plus"></i> Add Products</button>
+  </div>
+  <div class="entry-table-wrap">
+    <table class="entry-table">
+      <thead><tr>
+        <th style="width:32%">Product</th><th style="width:12%">SKU</th>
+        <th style="width:10%">Qty</th><th style="width:18%">Unit Price (Rp)</th>
+        <th style="width:16%">Subtotal (Rp)</th><th style="width:12%"></th>
+      </tr></thead>
+      <tbody id="sale-items-body"></tbody>
+    </table>
+  </div>
+  <div class="entry-totals">
+    <div class="entry-totals-row"><span>Subtotal</span><span id="sale-subtotal">Rp 0</span></div>
+    <div class="entry-totals-row"><span id="sale-fee-label">Admin Fees</span><span id="sale-fee-amount" class="profit-neg">− Rp 0</span></div>
+    <div class="entry-totals-row entry-totals-grand"><span>Net Sales</span><span id="sale-grand-total" class="profit-pos">Rp 0</span></div>
+  </div>
+  <div class="modal-footer">
+    <button class="btn" data-close="sale-modal">Cancel</button>
+    <button class="btn btn-primary" id="btn-save-sale">Save Sale</button>
+  </div>
+</div></div>
+
+<!-- Purchase -->
+<div class="modal-overlay" id="pur-modal"><div class="modal modal-fullscreen">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+    <h3 id="pur-modal-title" style="margin:0">New Purchase</h3>
+    <span id="pur-id-row" style="font-size:12px;color:var(--text2)">ID: <input type="text" id="pur-id" readonly style="width:130px;font-size:11px;padding:3px 6px"></span>
+  </div>
+  <div class="form-grid" style="margin-bottom:14px">
+    <div class="form-group"><label>Supplier</label><select id="pur-supplier-sel"></select></div>
+    <div class="form-group"><label>Date of Purchase</label><input type="date" id="pur-date"></div>
+    <div class="form-group"><label>Date of Arrival</label><input type="date" id="pur-arrival"></div>
+    <div class="form-group"><label>Delivery Fee (Rp, optional)</label><input type="number" id="pur-delivery" value="0" min="0"></div>
+    <div class="form-group"><label>Notes (optional)</label><input type="text" id="pur-notes" placeholder="Invoice #, batch..."></div>
+    <div class="form-group"><label>Status</label>
+      <select id="pur-status-sel">
+        <option value="pending">Pending</option>
+        <option value="partial">Received Partially</option>
+        <option value="received">Received</option>
+      </select>
+    </div>
+  </div>
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+    <div class="sec-title" style="margin:0">Items</div>
+    <button class="btn btn-sm btn-primary" id="btn-pur-add-products"><i class="ti ti-table-plus"></i> Add Products</button>
+  </div>
+  <div class="entry-table-wrap">
+    <table class="entry-table">
+      <thead><tr>
+        <th style="width:30%">Product</th><th style="width:11%">SKU</th>
+        <th style="width:10%">Qty</th><th style="width:15%">Unit Price (Rp)</th>
+        <th style="width:13%">Subtotal (Rp)</th><th style="width:13%">Eff. Cost/unit</th>
+        <th style="width:8%"></th>
+      </tr></thead>
+      <tbody id="pur-items-body"></tbody>
+    </table>
+  </div>
+  <div id="pur-delivery-note" class="delivery-note"></div>
+  <div class="entry-totals">
+    <div class="entry-totals-row"><span>Items Subtotal</span><span id="pur-subtotal">Rp 0</span></div>
+    <div class="entry-totals-row"><span>Delivery Fee</span><span id="pur-delivery-display">Rp 0</span></div>
+    <div class="entry-totals-row entry-totals-grand"><span>Total Purchase</span><span id="pur-grand-total" style="color:var(--blue)">Rp 0</span></div>
+  </div>
+  <div class="modal-footer">
+    <button class="btn" data-close="pur-modal">Cancel</button>
+    <button class="btn btn-primary" id="btn-save-purchase">Save Purchase</button>
+  </div>
+</div></div>
+
+<!-- Purchase Import -->
+<div class="modal-overlay" id="pur-import-modal"><div class="modal modal-lg">
+  <h3>Import Purchases CSV</h3>
+  <p class="modal-hint">Columns: <code>Purchase ID, Date, Arrival, Supplier, SKU, Product Name, Qty, Unit Price, Delivery Fee</code> — rows with the same Purchase ID are grouped as one transaction.</p>
+  <div class="form-group" style="margin-bottom:10px"><label>Paste CSV Data</label><textarea id="pur-import-csv" rows="6"></textarea></div>
+  <div class="import-file-row"><span class="hint">or upload:</span><input type="file" id="pur-import-file" accept=".csv"></div>
+  <div id="pur-import-preview" class="hint"></div>
+  <div class="modal-footer">
+    <button class="btn" data-close="pur-import-modal">Cancel</button>
+    <button class="btn btn-primary" id="btn-pur-import-process">Import</button>
+  </div>
+</div></div>
+
+<!-- Return -->
+<div class="modal-overlay" id="return-modal"><div class="modal modal-lg">
+  <h3>Log Return / Refund</h3>
+  <div class="form-grid">
+    <div class="form-group"><label>Return Date</label><input type="date" id="ret-date"></div>
+    <div class="form-group"><label>Linked Sale ID (optional)</label><input type="text" id="ret-sale-id" placeholder="SALE-XXXXXX"></div>
+    <div class="form-group"><label>Customer</label><input type="text" id="ret-customer"></div>
+    <div class="form-group"><label>SKU</label><select id="ret-sku"></select></div>
+    <div class="form-group"><label>Product Name</label><input type="text" id="ret-product" readonly></div>
+    <div class="form-group"><label>Qty Returned</label><input type="number" id="ret-qty" min="1" value="1"></div>
+    <div class="form-group"><label>Refund Amount (Rp)</label><input type="number" id="ret-refund"></div>
+    <div class="form-group fg2"><label>Reason</label><input type="text" id="ret-reason" placeholder="e.g. Damaged, Wrong item, Changed mind"></div>
+  </div>
+  <div class="modal-footer">
+    <button class="btn" data-close="return-modal">Cancel</button>
+    <button class="btn btn-primary" id="btn-save-return">Save Return</button>
+  </div>
+</div></div>
+
+<!-- Return Import -->
+<div class="modal-overlay" id="ret-import-modal"><div class="modal modal-lg">
+  <h3>Import Returns CSV</h3>
+  <p class="modal-hint">Columns: <code>Date, Linked Sale ID, Customer, SKU, Product Name, Qty, Refund Amount, Reason</code></p>
+  <div class="form-group" style="margin-bottom:10px"><label>Paste CSV Data</label><textarea id="ret-import-csv" rows="5"></textarea></div>
+  <div class="import-file-row"><span class="hint">or upload:</span><input type="file" id="ret-import-file" accept=".csv"></div>
+  <div id="ret-import-preview" class="hint"></div>
+  <div class="modal-footer">
+    <button class="btn" data-close="ret-import-modal">Cancel</button>
+    <button class="btn btn-primary" id="btn-ret-import-process">Import</button>
+  </div>
+</div></div>
+
+<!-- Fee -->
+<div class="modal-overlay" id="fee-modal"><div class="modal modal-lg">
+  <h3 id="fee-modal-title">Add Admin Fee</h3>
+  <div class="form-grid">
+    <div class="form-group fg2"><label>Fee Name</label><input type="text" id="fee-name" placeholder="e.g. Shopee Commission"></div>
+    <div class="form-group"><label>Fee Type</label><select id="fee-type"><option value="percent">Percentage (%)</option><option value="fixed">Fixed Amount (Rp)</option></select></div>
+    <div class="form-group"><label>Amount</label><input type="number" id="fee-amount"></div>
+    <div class="form-group fg2"><label>Fee Cap (Rp — leave blank for no cap)</label><input type="number" id="fee-cap"></div>
+  </div>
+  <input type="hidden" id="fee-edit-idx" value="-1">
+  <div class="modal-footer">
+    <button class="btn" data-close="fee-modal">Cancel</button>
+    <button class="btn btn-primary" id="btn-save-fee">Save Fee</button>
+  </div>
+</div></div>
+
+<!-- Supplier -->
+<div class="modal-overlay" id="supplier-modal"><div class="modal modal-lg">
+  <h3 id="sup-modal-title">Add Supplier</h3>
+  <div class="form-grid">
+    <div class="form-group fg2"><label>Supplier Name</label><input type="text" id="sup-name"></div>
+    <div class="form-group"><label>Contact Person</label><input type="text" id="sup-contact"></div>
+    <div class="form-group"><label>Phone / WhatsApp</label><input type="text" id="sup-phone"></div>
+    <div class="form-group"><label>Payment Terms</label><select id="sup-terms"><option>COD</option><option>Net 7</option><option>Net 14</option><option>Net 30</option><option>Prepaid</option><option>Consignment</option></select></div>
+    <div class="form-group"><label>Lead Time (days)</label><input type="number" id="sup-lead" value="3" min="1"></div>
+    <div class="form-group fg2"><label>Notes</label><input type="text" id="sup-notes" placeholder="Brands, categories, discount terms..."></div>
+  </div>
+  <input type="hidden" id="sup-edit-idx" value="-1">
+  <div class="modal-footer">
+    <button class="btn" data-close="supplier-modal">Cancel</button>
+    <button class="btn btn-primary" id="btn-save-supplier">Save Supplier</button>
+  </div>
+</div></div>
+
+<!-- Category -->
+<div class="modal-overlay" id="cat-modal"><div class="modal modal-lg">
+  <h3 id="cat-modal-title">Add Category</h3>
+  <div class="form-grid">
+    <div class="form-group fg2"><label>Category Name</label><input type="text" id="cat-name"></div>
+    <div class="form-group fg2"><label>Parent Category (optional)</label><select id="cat-parent"></select></div>
+    <div class="form-group fg2"><label>Description</label><input type="text" id="cat-desc"></div>
+  </div>
+  <input type="hidden" id="cat-edit-idx" value="-1">
+  <div class="modal-footer">
+    <button class="btn" data-close="cat-modal">Cancel</button>
+    <button class="btn btn-primary" id="btn-save-category">Save Category</button>
+  </div>
+</div></div>
+
+<!-- Brand -->
+<div class="modal-overlay" id="brand-modal"><div class="modal modal-lg">
+  <h3 id="brand-modal-title">Add Brand</h3>
+  <div class="form-grid">
+    <div class="form-group fg2"><label>Brand Name</label><input type="text" id="brand-name" placeholder="e.g. The Ordinary"></div>
+    <div class="form-group"><label>Country of Origin</label><input type="text" id="brand-country" placeholder="e.g. South Korea"></div>
+    <div class="form-group"><label>Notes</label><input type="text" id="brand-notes" placeholder="e.g. Skincare, cruelty-free..."></div>
+  </div>
+  <input type="hidden" id="brand-edit-idx" value="-1">
+  <div class="modal-footer">
+    <button class="btn" data-close="brand-modal">Cancel</button>
+    <button class="btn btn-primary" id="btn-save-brand">Save Brand</button>
+  </div>
+</div></div>
+
+<!-- Target -->
+<div class="modal-overlay" id="target-modal"><div class="modal modal-lg">
+  <h3>Set Sales Target</h3>
+  <div class="form-grid">
+    <div class="form-group"><label>Month</label><select id="tgt-month"><option value="1">January</option><option value="2">February</option><option value="3">March</option><option value="4">April</option><option value="5">May</option><option value="6">June</option><option value="7">July</option><option value="8">August</option><option value="9">September</option><option value="10">October</option><option value="11">November</option><option value="12">December</option></select></div>
+    <div class="form-group"><label>Year</label><input type="number" id="tgt-year" value="2025"></div>
+    <div class="form-group"><label>Revenue Target (Rp)</label><input type="number" id="tgt-revenue"></div>
+    <div class="form-group"><label>Orders Target</label><input type="number" id="tgt-orders"></div>
+  </div>
+  <div class="modal-footer">
+    <button class="btn" data-close="target-modal">Cancel</button>
+    <button class="btn btn-primary" id="btn-save-target">Save Target</button>
+  </div>
+</div></div>
+
+<!-- Restock -->
+<div class="modal-overlay" id="restock-modal"><div class="modal modal-lg">
+  <h3>Add Restock Rule</h3>
+  <div class="form-grid">
+    <div class="form-group fg2"><label>Product</label><select id="rs-sku"></select></div>
+    <div class="form-group"><label>Min Stock Trigger</label><input type="number" id="rs-min" value="5" min="0"></div>
+    <div class="form-group"><label>Suggested Reorder Qty</label><input type="number" id="rs-qty" value="20" min="1"></div>
+  </div>
+  <div class="modal-footer">
+    <button class="btn" data-close="restock-modal">Cancel</button>
+    <button class="btn btn-primary" id="btn-save-restock">Save Rule</button>
+  </div>
+</div></div>
+
+<!-- Bundle -->
+<div class="modal-overlay" id="bundle-modal"><div class="modal modal-lg">
+  <h3 id="bundle-modal-title">Create Bundle</h3>
+  <div class="form-grid">
+    <div class="form-group fg2"><label>Bundle Name</label><input type="text" id="bun-name"></div>
+    <div class="form-group"><label>Bundle SKU</label><input type="text" id="bun-sku"></div>
+    <div class="form-group"><label>Bundle Price (Rp)</label><input type="number" id="bun-price"></div>
+  </div>
+  <div class="bundle-items-section">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+      <div class="sec-title" style="margin:0">Bundle Items</div>
+      <button class="btn btn-sm btn-primary" id="btn-bun-add-products"><i class="ti ti-table-plus"></i> Add Products</button>
+    </div>
+    <div id="bun-items-list"></div>
+  </div>
+  <input type="hidden" id="bun-edit-idx" value="-1">
+  <div class="modal-footer">
+    <button class="btn" data-close="bundle-modal">Cancel</button>
+    <button class="btn btn-primary" id="btn-save-bundle">Save Bundle</button>
+  </div>
+</div></div>
+
+<!-- Shopee CSV Import (Sales) -->
+<div class="modal-overlay" id="import-modal"><div class="modal modal-lg">
+  <h3>Import Shopee Orders CSV</h3>
+  <p class="modal-hint">Expected columns: <code>Order ID, Date, Buyer, SKU, Product Name, Qty, Price</code></p>
+  <div class="form-group" style="margin-bottom:10px"><label>Paste CSV Data</label><textarea id="import-csv" rows="6" placeholder="Order ID,Date,Buyer,SKU,Product Name,Qty,Price&#10;SHP-001,2025-01-15,Buyer1,SKU001,Serum Vit C,2,85000"></textarea></div>
+  <div class="import-file-row"><span class="hint">or upload file:</span><input type="file" id="import-file" accept=".csv"></div>
+  <div id="import-preview" class="hint"></div>
+  <div class="modal-footer">
+    <button class="btn" data-close="import-modal">Cancel</button>
+    <button class="btn btn-primary" id="btn-process-import">Import Orders</button>
+  </div>
+</div></div>
+
+<!-- Cashflow -->
+<div class="modal-overlay" id="cashflow-modal"><div class="modal modal-lg">
+  <h3>Add Income / Expense</h3>
+  <div class="form-grid">
+    <div class="form-group"><label>Date</label><input type="date" id="cf-date"></div>
+    <div class="form-group"><label>Type</label><select id="cf-type"><option value="Expense">Expense</option><option value="Income">Income</option></select></div>
+    <div class="form-group"><label>Category</label>
+      <select id="cf-category">
+        <option>Advertising</option><option>Packaging</option><option>Shipping Cost</option>
+        <option>Salary</option><option>Rent</option><option>Software</option>
+        <option>Equipment</option><option>Refund Given</option><option>Platform Fee</option>
+        <option>Other Income</option><option>Other Expense</option>
+      </select>
+    </div>
+    <div class="form-group"><label>Amount (Rp)</label><input type="number" id="cf-amount" min="0" placeholder="0"></div>
+    <div class="form-group fg2"><label>Description</label><input type="text" id="cf-description" placeholder="What was this for?"></div>
+    <div class="form-group fg2"><label>Notes (optional)</label><input type="text" id="cf-notes"></div>
+  </div>
+  <div class="modal-footer">
+    <button class="btn" data-close="cashflow-modal">Cancel</button>
+    <button class="btn btn-primary" id="btn-save-cashflow">Save Entry</button>
+  </div>
+</div></div>
+
+<!-- Product Selector Modal -->
+<div class="modal-overlay" id="product-selector-modal"><div class="modal modal-fullscreen" style="display:flex;flex-direction:column;height:88vh">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-shrink:0">
+    <h3 style="margin:0">Select Products</h3>
+    <button class="btn btn-sm" data-close="product-selector-modal"><i class="ti ti-x"></i></button>
+  </div>
+  <!-- Filters -->
+  <div style="display:flex;gap:10px;margin-bottom:12px;flex-wrap:wrap;flex-shrink:0">
+    <div class="search-wrap" style="flex:1;min-width:180px">
+      <i class="ti ti-search"></i>
+      <input class="search-input" id="ps-search" type="text" placeholder="Search by SKU or name..." oninput="_psRender()" style="width:100%">
+    </div>
+    <select id="ps-cat" class="filter-select" onchange="_psRender()" style="min-width:160px"><option value="">All Categories</option></select>
+    <select id="ps-brand" class="filter-select" onchange="_psRender()" style="min-width:140px"><option value="">All Brands</option></select>
+    <span id="ps-count" style="font-size:12px;color:var(--text2);align-self:center"></span>
+  </div>
+  <!-- Select all row -->
+  <div id="ps-select-all-row" style="display:flex;align-items:center;gap:8px;padding:6px 10px;background:var(--bg2);border-radius:var(--radius);margin-bottom:8px;flex-shrink:0">
+    <input type="checkbox" id="ps-select-all" onclick="psSelectAll(this)">
+    <label for="ps-select-all" style="font-size:12px;font-weight:600;cursor:pointer">Select all visible</label>
+  </div>
+  <!-- Table -->
+  <div class="tbl-wrap" style="flex:1;overflow-y:auto;margin-bottom:12px">
+    <table style="min-width:500px">
+      <thead><tr>
+        <th style="width:40px"></th>
+        <th>SKU</th>
+        <th>Product Name</th>
+        <th>Brand</th>
+        <th style="text-align:right">Sell Price</th>
+        <th style="text-align:right">Stock</th>
+      </tr></thead>
+      <tbody id="ps-tbody"></tbody>
+    </table>
+  </div>
+  <div style="display:flex;justify-content:flex-end;gap:10px;flex-shrink:0;padding-top:12px;border-top:0.5px solid var(--border)">
+    <button class="btn" data-close="product-selector-modal">Cancel</button>
+    <button class="btn btn-primary" id="ps-confirm-btn" onclick="psConfirm()" disabled>Select products above</button>
+  </div>
+</div></div>
+
+<!-- Mass Price Edit Modal -->
+<div class="modal-overlay" id="mass-price-modal"><div class="modal modal-lg">
+  <h3>Mass Edit Sell Price</h3>
+  <p id="mass-price-preview" style="font-size:12px;color:var(--text2);margin-bottom:14px"></p>
+  <div class="form-grid">
+    <div class="form-group fg2">
+      <label>Edit Mode</label>
+      <select id="mass-price-mode">
+        <option value="set">Set exact price (Rp)</option>
+        <option value="increase_pct">Increase by % </option>
+        <option value="decrease_pct">Decrease by %</option>
+        <option value="increase_amt">Increase by amount (Rp)</option>
+        <option value="decrease_amt">Decrease by amount (Rp)</option>
+      </select>
+    </div>
+    <div class="form-group fg2">
+      <label>Value</label>
+      <input type="number" id="mass-price-value" min="0" placeholder="e.g. 50000 or 10">
+    </div>
+  </div>
+  <div class="modal-footer">
+    <button class="btn" data-close="mass-price-modal">Cancel</button>
+    <button class="btn btn-primary" id="btn-apply-mass-price">Apply to Selected</button>
+  </div>
+</div></div>
+
+<!-- ── Confirm Delete Modal ── -->
+<div class="modal-overlay" id="confirm-delete-modal"><div class="modal" style="max-width:380px;text-align:center">
+  <div style="font-size:40px;margin-bottom:12px">🗑️</div>
+  <h3 style="margin-bottom:10px">Confirm Delete</h3>
+  <p id="confirm-delete-msg" style="font-size:13px;color:var(--text2);margin-bottom:20px;line-height:1.5"></p>
+  <div style="display:flex;gap:10px;justify-content:center">
+    <button class="btn" data-close="confirm-delete-modal" style="flex:1;min-height:44px">Cancel</button>
+    <button class="btn btn-danger" id="confirm-delete-ok" style="flex:1;min-height:44px;font-weight:600">Delete</button>
+  </div>
+</div></div>
+
+<!-- ── Detail View Modal ── -->
+<div class="modal-overlay" id="detail-modal"><div class="modal modal-lg">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+    <h3 id="detail-modal-title" style="margin:0"></h3>
+    <button class="btn btn-sm" data-close="detail-modal"><i class="ti ti-x"></i></button>
+  </div>
+  <div id="detail-modal-body"></div>
+  <div class="modal-footer">
+    <button class="btn btn-danger btn-sm" id="detail-delete-btn"><i class="ti ti-trash"></i> Delete</button>
+    <button class="btn btn-sm" data-close="detail-modal">Close</button>
+    <button class="btn btn-primary btn-sm" id="detail-edit-btn"><i class="ti ti-edit"></i> Edit</button>
+  </div>
+</div></div>
+
+<div class="toast" id="toast"></div>
+
+<!-- ═══════════════════════ SCRIPTS ═══════════════════════ -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script src="data/defaultCategories.js"></script>
+<script src="js/db.js"></script>
+<script src="js/utils.js"></script>
+<script src="js/ui.js"></script>
+<script src="js/charts.js"></script>
+<script src="js/modules/inventory.js"></script>
+<script src="js/modules/sales.js"></script>
+<script src="js/modules/purchases.js"></script>
+<script src="js/modules/returns.js"></script>
+<script src="js/modules/fees.js"></script>
+<script src="js/modules/suppliers.js"></script>
+<script src="js/modules/categories.js"></script>
+<script src="js/modules/brands.js"></script>
+<script src="js/modules/bundles.js"></script>
+<script src="js/modules/targets.js"></script>
+<script src="js/modules/restock.js"></script>
+<script src="js/modules/cashflow.js"></script>
+<script src="js/modules/pl.js"></script>
+<script src="js/modules/dashboard.js"></script>
+<script src="js/app.js"></script>
+</div><!-- end app-shell -->
+</body>
+</html>
